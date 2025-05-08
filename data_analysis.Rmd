@@ -1,0 +1,649 @@
+---
+title: "tag_matching_alifeversion"
+output: html_document
+date: "2025-05-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ggplot2) # data visualization 
+library(viridis) # data visualization 
+library(ggh4x) # data visualization 
+library(dplyr) # data manipulation
+library(effsize) # stats
+```
+
+## parastab control
+```{r}
+
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_mutualists/"
+a <- read.csv(paste0(filepath,"org_dump_file.dat"),h=T,
+                                    #seed,tag_dist,tag_mut
+                        colClasses=c("factor","factor","factor",
+                                     #host_int,sym_int
+                                    "double","double",
+                                    # repro/to/from counts
+                                    "double","double","double","double","double","double",
+                                    #host_tag,sym_tag,tag_distance
+                                    "character","character","double"))
+a$sym_tag[a$sym_tag==""]<-NA
+a$cond<-"mut"# <- org_dump_df
+
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_parasites/"
+b <- read.csv(paste0(filepath,"org_dump_file.dat"),h=T,
+                                    #seed,tag_dist,tag_mut
+                        colClasses=c("factor","factor","factor",
+                                     #host_int,sym_int
+                                    "double","double",
+                                    # repro/to/from counts
+                                    "double","double","double","double","double","double",
+                                    #host_tag,sym_tag,tag_distance
+                                    "character","character","double"))
+b$sym_tag[b$sym_tag==""]<-NA
+b$cond<-"para"# <- org_dump_df
+
+small <- rbind(subset(b, !is.na(sym_tag)), subset(a, !is.na(sym_tag)))
+  
+identifying_cols <- 1:3
+for (x in identifying_cols){
+  small[[x]]<- as.factor(small[[x]])
+}
+```
+
+
+```{r}
+what <- subset(small, tag_dist == '0.625' & tag_mut=='0.1')
+
+
+what <- dplyr::select(what, c(tag_dist, tag_mut, tag_distance, seed, cond))
+write.csv(what,"td0.625_tm0.1_pooled.csv", row.names=F)
+?write.csv
+read.csv("td0.625_tm0.1_pooled.csv")
+?wilcox.test
+wilcox.test(tag_distance ~ cond, data=what)
+ggplot(what, aes(x=tag_distance)) + 
+  geom_histogram(data=subset(what, sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill=sym_bin),alpha=0.7,  bins=23)+
+  geom_histogram(data=subset(what, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill=sym_bin), alpha=0.7, bins=23) +
+  geom_vline(data=subset(what, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
+  geom_vline(data=subset(what, sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
+  xlab("Tag proportional mismatch") + 
+  scale_fill_manual(name="Symbiont behavior",
+                    values=c("-1 to -0.6 (Parasitic)"="#3E9BFEFF", '-0.6 to -0.2 (Detrimental)'="#46F884FF", 
+                             '-0.2 to 0.2 (Nearly neutral)'="#E1DD37FF",
+                             "0.2 to 0.6 (Positive)"="#F05B12FF", "0.6 to 1.0 (Mutualistic)"="#7A0403FF"),
+                             breaks=c("-1 to -0.6 (Parasitic)",'-0.6 to -0.2 (Detrimental)',
+                             '-0.2 to 0.2 (Nearly neutral)',
+                             "0.2 to 0.6 (Positive)", "0.6 to 1.0 (Mutualistic)")) + 
+  ylab("Pooled count across replicates")+
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  facet_nested_theme
+
+ggplot(what, aes(x=cond,y=tag_distance, color=cond)) + geom_boxplot()+ 
+  xlab("Tag proportional mismatch") + 
+  ylab("Pooled count across replicates")+
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+     guides(fill="none")
+
+Summarize(tag_distance ~ cond,
+          data=what,
+          digits=3)
+install.packages("FSA")co
+library(FSA)
+
+a <- rbind(data.frame(cond = rep("para", 1000), tag_distance = sample(subset(what, cond=="para")$tag_distance, 1000, replace = T)),data.frame(cond = rep("mut", 1000), tag_distance = sample(subset(what, cond=="mut")$tag_distance, 1000, replace = T)))
+a
+?sample
+rep("para", 1000)
+sample(subset(what, cond=="para")$tag_distance, 5, replace = T)
+sample()
+
+wilcox.test(tag_distance ~ cond, data=what)$p.value
+
+?t.test()
+
+t.test(tag_distance~ cond, data=what)
+
+```
+
+### plot histogram of pair tag mismatch
+
+```{r}
+small$sym_bin <- ifelse(small$sym_int < -0.6, "-1 to -0.6 (Parasitic)",
+                 ifelse(small$sym_int < -0.2 & small$sym_int >= -0.6, "-0.6 to -0.2 (Detrimental)",
+                 ifelse(small$sym_int < 0.2 & small$sym_int >= -0.2, "-0.2 to 0.2 (Nearly neutral)",
+                 ifelse(small$sym_int < 0.6 & small$sym_int >= 0.2, "0.2 to 0.6 (Positive)",
+                 ifelse(small$sym_int <= 1 & small$sym_int >= 0.6, "0.6 to 1.0 (Mutualistic)", "error"
+                 )))))
+
+ggplot(small, aes(x=tag_distance)) + 
+  geom_histogram(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill=sym_bin),alpha=0.7,  bins=16)+
+  geom_histogram(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill=sym_bin), alpha=0.7, bins=16) +
+  geom_vline(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
+  geom_vline(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
+  xlab("Tag proportional mismatch") + 
+  scale_fill_manual(name="Symbiont behavior",
+                    values=c("-1 to -0.6 (Parasitic)"="#3E9BFEFF", '-0.6 to -0.2 (Detrimental)'="#46F884FF", 
+                             '-0.2 to 0.2 (Nearly neutral)'="#E1DD37FF",
+                             "0.2 to 0.6 (Positive)"="#F05B12FF", "0.6 to 1.0 (Mutualistic)"="#7A0403FF"),
+                             breaks=c("-1 to -0.6 (Parasitic)",'-0.6 to -0.2 (Detrimental)',
+                             '-0.2 to 0.2 (Nearly neutral)',
+                             "0.2 to 0.6 (Positive)", "0.6 to 1.0 (Mutualistic)")) + 
+  ylab("Pooled count across replicates")+
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  facet_nested_theme
+```
+
+### wilcoxon & cliff's delta for difference between para and mut
+
+```{r}
+colnames(tag_dist_df)
+small <- subset(small) # get the merged df of sym-host paris between para and mut conditions
+
+small <- small %>% group_by(tag_dist,tag_mut) %>% mutate(para_pres = "para"%in%cond)
+small <- subset(small, para_pres == T & tag_mut != '0')
+small$cond <- as.factor(small$cond)
+
+nm <- c()
+md <- c()
+effect <- c()
+n_test <- 0
+for (td in unique(small$tag_dist)){
+  for(tm in unique(small$tag_mut)){
+    a <- subset(small, tag_dist == td & tag_mut == tm)
+    if("para" %in% a$cond){
+      n_test <- n_test + 1
+      print(paste0("td",td,"_tm",tm))
+      nm <- append(nm, paste0("td",td,"_tm",tm))
+      md <- append(md, wilcox.test(tag_distance ~ cond, data=a)$p.value)
+      effect <- append(effect, cliff.delta(tag_distance ~ cond, data=a)$estimate)
+    }
+  }
+}
+print(n_test)
+
+print(md)
+
+models <- data.frame(names = nm, p_vals=md, deltas=)
+p_val_to_beat <- 0.05 / n_test
+
+what$cond <- as.factor(what$cond)
+wilcox.test(tag_distance ~ cond, data=what)$p.value
+library(effsize)
+
+package.install("effsize")
+install.packages("effsize")
+
+str(what$cond)
+
+thing <- cliff.delta(tag_distance ~ cond, data=what)
+str(thing)$estimate
+
+thing$estimate
+?cliff.delta
+# small_small currently contains the combo of par
+```
+
+### count of surviving replicates
+
+```{r}
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_mutualists/"
+a <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+a$cond <- "mut"
+
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_parasites/"
+b <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+b$cond <- "para"
+
+sym_vals_df <- rbind(a,b)
+  
+identifying_cols <- 1:3
+for (x in identifying_cols){
+  sym_vals_df[[x]]<- as.factor(sym_vals_df[[x]])
+}
+
+small <- subset(sym_vals_df, update == max(update))
+small$survived <- small$count > 0
+small <- small %>% group_by(tag_dist,tag_mut,cond) %>% summarise(survivors = sum(survived))
+nrow(subset(small, survivors > 0 & tag_mut != '-1'))
+subset(small, survivors > 0 & survivors < 30 & cond=="para")
+ggplot(small, aes(x=tag_mut, y=tag_dist,fill=survivors)) + geom_tile() + facet_wrap(~cond)
+
+```
+
+## VT control
+```{r}
+
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_mutualists/"
+a <- read.csv(paste0(filepath,"org_dump_file.dat"),h=T,
+                                    #seed,tag_dist,tag_mut
+                        colClasses=c("factor","factor","factor",
+                                     #host_int,sym_int
+                                    "double","double",
+                                    # repro/to/from counts
+                                    "double","double","double","double","double","double",
+                                    #host_tag,sym_tag,tag_distance
+                                    "character","character","double"))
+a$sym_tag[a$sym_tag==""]<-NA
+a$cond<-"mut"# <- org_dump_df
+
+filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_parasites/"
+b <- read.csv(paste0(filepath,"org_dump_file.dat"),h=T,
+                                    #seed,tag_dist,tag_mut
+                        colClasses=c("factor","factor","factor",
+                                     #host_int,sym_int
+                                    "double","double",
+                                    # repro/to/from counts
+                                    "double","double","double","double","double","double",
+                                    #host_tag,sym_tag,tag_distance
+                                    "character","character","double"))
+b$sym_tag[b$sym_tag==""]<-NA
+b$cond<-"para"# <- org_dump_df
+
+small <- rbind(subset(b, !is.na(sym_tag)), subset(a, !is.na(sym_tag)))
+rm(a)
+rm(b)
+small$cond <- as.factor(small$cond)
+identifying_cols <- 1:3
+for (x in identifying_cols){
+  small[[x]]<- as.factor(small[[x]])
+}
+
+```
+
+```{r}
+
+if("_none" %in% small$tag_dist){
+  small$tag_dist <- factor(small$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625"))
+} else if("-1" %in% small$tag_dist){
+  small$tag_dist <- factor(small$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"-1"))
+
+}
+
+
+
+small$sym_bin <- ifelse(small$sym_int < -0.6, "-1 to -0.6 (Parasitic)",
+                 ifelse(small$sym_int < -0.2 & small$sym_int >= -0.6, "-0.6 to -0.2 (Detrimental)",
+                 ifelse(small$sym_int < 0.2 & small$sym_int >= -0.2, "-0.2 to 0.2 (Nearly neutral)",
+                 ifelse(small$sym_int < 0.6 & small$sym_int >= 0.2, "0.2 to 0.6 (Positive)",
+                 ifelse(small$sym_int <= 1 & small$sym_int >= 0.6, "0.6 to 1.0 (Mutualistic)", "error"
+                 )))))
+
+
+facet_nested_theme <- theme(
+    strip.background = element_rect(fill = "white", colour = "grey", linetype="dotted", size = 0.2, linewidth=30), 
+    panel.background = element_rect(fill='white', color='grey'),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    legend.key = element_rect(color = "transparent"),
+    panel.spacing.x = unit(0,"line"),
+    panel.spacing.y = unit(0,"line"),
+    axis.text.x = element_text(angle = 60, vjust = 0.2, hjust=0.2))
+
+small <- small %>% group_by(sym_bin,tag_dist,tag_mut) %>% mutate(td_mean =  mean(tag_distance))
+```
+```{r,fig.width=9, fig.height=6}
+ggplot(small, aes(x=tag_distance)) + 
+  geom_histogram(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill="Fixed parasites",y=..count../10000),alpha=0.7,  bins=16)+
+  geom_histogram(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill="Fixed mutualists",y=..count../10000), alpha=0.7, bins=16) +
+  geom_vline(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
+  geom_vline(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
+  xlab("Tag proportional mismatch") + 
+  scale_fill_manual(name="Symbiont behavior",
+                    values=c("Fixed parasites"="#3E9BFEFF", "Fixed mutualists"="#7A0403FF"),
+                             breaks=c("Fixed parasites", "Fixed mutualists")) + 
+  ylab("Pooled count across replicates / 10,000")+
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  facet_nested_theme + theme(legend.position = 'bottom') #+ theme(axis.text.y = element_text(angle = 60))
+```
+
+
+# parastab evo
+```{r}
+filepath <- "../../symbulation_experiments/2025.04.17_parastab_tagmat_fixed_phylointeractions/"
+syms_df <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+syms_df <- subset(syms_df, update==max(update))
+hosts_df <- read.csv(paste0(filepath,"host_vals.dat"),h=T)
+hosts_df <- subset(hosts_df, update==max(update))
+
+hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '-1', "no tag",hosts_df$tag_dist)
+syms_df$tag_dist <- ifelse(syms_df$tag_dist == '-1', "no tag",syms_df$tag_dist)
+
+hosts_df$tag_mut <- ifelse(hosts_df$tag_mut == '-1', "no tag",hosts_df$tag_mut)
+syms_df$tag_mut <- ifelse(syms_df$tag_mut == '-1', "no tag",syms_df$tag_mut)
+
+identifying_cols <- 1:3
+for (x in identifying_cols){
+  syms_df[[x]]<- as.factor(syms_df[[x]])
+  hosts_df[[x]]<- as.factor(hosts_df[[x]])
+}
+  
+str(hosts_df)
+hosts_df$tag_dist <- factor(hosts_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
+syms_df$tag_dist <- factor(syms_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
+
+
+levels(hosts_df$tag_mut)
+hosts_df$tag_mut <- factor(hosts_df$tag_mut, levels=c("no tag", "0", "1e-04", "5e-04", "0.001", "0.005", "0.01", "0.05", "0.1"))
+syms_df$tag_mut <- factor(syms_df$tag_mut, levels=c("no tag", "0", "1e-04", "5e-04", "0.001", "0.005", "0.01", "0.05", "0.1"))
+
+
+
+rm(identifying_cols)
+```
+
+#### strategy barplots
+##### symbionts
+```{r,fig.width=15, fig.height=10}
+end_syms_df <- subset(syms_df, update==max(update))
+
+end_syms_df <- end_syms_df %>%
+    group_by(tag_dist,tag_mut) %>% 
+              mutate(com_rep = match(seed, unique(seed)))
+
+start_i <- 9
+colnames(end_syms_df)[start_i:(start_i+19)]
+hist_df <- end_syms_df %>% select(c(com_rep, tag_dist, tag_mut), colnames(end_syms_df)[start_i:(start_i+19)])
+
+# Plotting
+# load our color palette 
+tenhelix <- c("#891901", "#B50142", "#D506AD", "#AB08FF", "#5731FD", "#4755FF", "#42bcf5", "#42e0f5", "#9af1fc", "#c5f6fc")
+
+# now let's collapse all those columns...
+hist_df <- melt(hist_df, id=c("com_rep","tag_mut","tag_dist"))
+
+# Group bins into larger categories and give them descriptive names
+hist_df$variable <- as.character(hist_df$variable)
+
+hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.3'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.4'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.5'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.6'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.7'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.8'] <- "0.8 to 1.0 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.9'] <- "0.8 to 1.0 (Mutualistic)"
+
+# force set the order of the variable column
+hist_df$variable <- factor(hist_df$variable, levels=rev(unique(hist_df$variable)))
+
+# compress bin counts
+hist_df <- hist_df %>%
+    group_by(com_rep, tag_dist, tag_mut, variable) %>% 
+              summarise(value = sum(value))
+
+hist_df$tag_dist <- factor(hist_df$tag_dist, levels=rev(unique(hist_df$tag_dist)))
+
+# order by proportion of ubermutualists
+hist_df$max_mut_count <- rep(hist_df$value[hist_df$variable=="0.8 to 1.0 (Mutualistic)"],1,each=10)
+hist_df <- hist_df %>% group_by(tag_dist,tag_mut,com_rep) %>% mutate(max_mut_prop = max_mut_count/sum(value))
+hist_df<-hist_df %>% group_by(tag_dist, tag_mut) %>% arrange(desc(max_mut_prop)) 
+hist_df<-hist_df %>% group_by(tag_dist, tag_mut) %>%mutate(group_id = rep(1:30,1,each=10))
+
+a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
+  geom_col(position="fill", na.rm=T, width = 1) +
+  scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
+  xlab("Replicate") + ylab("Proportion of symbiont population") +
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
+  facet_nested_theme 
+
+a
+```
+
+##### hosts
+```{r,fig.width=15, fig.height=10}
+
+syms_hist <- hist_df
+end_syms_df <- subset(hosts_df, update==max(update))
+
+end_syms_df <- end_syms_df %>%
+    group_by(tag_dist,tag_mut) %>% 
+              mutate(com_rep = match(seed, unique(seed)))
+
+start_i <- 10
+colnames(end_syms_df)[start_i:(start_i+19)]
+hist_df <- end_syms_df %>% select(c(com_rep, tag_dist, tag_mut), colnames(end_syms_df)[start_i:(start_i+19)])
+
+# Plotting
+# load our color palette 
+tenhelix <- c("#891901", "#B50142", "#D506AD", "#AB08FF", "#5731FD", "#4755FF", "#42bcf5", "#42e0f5", "#9af1fc", "#c5f6fc")
+
+# now let's collapse all those columns...
+hist_df <- melt(hist_df, id=c("com_rep","tag_mut","tag_dist"))
+
+# Group bins into larger categories and give them descriptive names
+hist_df$variable <- as.character(hist_df$variable)
+
+hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.3'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.4'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.5'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.6'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.7'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.8'] <- "0.8 to 1.0 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.9'] <- "0.8 to 1.0 (Mutualistic)"
+
+# force set the order of the variable column
+hist_df$variable <- factor(hist_df$variable, levels=rev(unique(hist_df$variable)))
+
+# compress bin counts
+hist_df <- hist_df %>%
+    group_by(com_rep, tag_dist, tag_mut, variable) %>% 
+              summarise(value = sum(value))
+
+hist_df$tag_dist <- factor(hist_df$tag_dist, levels=rev(unique(hist_df$tag_dist)))
+
+hist_df <- hist_df %>%left_join(select(syms_hist, c(tag_dist, tag_mut, group_id, variable, com_rep)), 
+                                            by= join_by(tag_mut,variable,tag_dist,com_rep))
+
+b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
+  geom_col(position="fill", na.rm=T, width = 1) +
+  scale_fill_manual(name="Behaviour",values=tenhelix)+
+  xlab("Replicate") + ylab("Proportion of host population") +
+  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
+  facet_nested_theme #+ theme(legend.position = 'bottom') 
+b
+```
+
+##### combined
+```{r,fig.width=15, fig.height=6}
+legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.justification="center" ,legend.box.just = "bottom"))
+plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
+grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.1))
+```
+
+
+
+# vt evo
+```{r}
+filepath <- "../../symbulation_experiments/2025.04.17_vtsweep_tagmat_fixed_phylointeractions/"
+syms_df <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+syms_df <- subset(syms_df, update==max(update))
+hosts_df <- read.csv(paste0(filepath,"host_vals.dat"),h=T)
+hosts_df <- subset(hosts_df, update==max(update))
+
+hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '_none', "no tag",hosts_df$tag_dist)
+syms_df$tag_dist <- ifelse(syms_df$tag_dist == '_none', "no tag",syms_df$tag_dist)
+
+identifying_cols <- 1:3
+for (x in identifying_cols){
+  syms_df[[x]]<- as.factor(syms_df[[x]])
+  hosts_df[[x]]<- as.factor(hosts_df[[x]])
+}
+  
+str(hosts_df)
+hosts_df$tag_dist <- factor(hosts_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
+syms_df$tag_dist <- factor(syms_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
+
+
+
+rm(identifying_cols)
+```
+
+#### strategy barplots
+##### symbionts
+```{r,fig.width=15, fig.height=10}
+end_syms_df <- subset(syms_df, update==max(update))
+
+end_syms_df <- end_syms_df %>%
+    group_by(tag_dist,vt) %>% 
+              mutate(com_rep = match(seed, unique(seed)))
+
+start_i <- 9
+colnames(end_syms_df)[start_i:(start_i+19)]
+hist_df <- end_syms_df %>% select(c(com_rep, tag_dist, vt), colnames(end_syms_df)[start_i:(start_i+19)])
+
+# Plotting
+# load our color palette 
+tenhelix <- c("#891901", "#B50142", "#D506AD", "#AB08FF", "#5731FD", "#4755FF", "#42bcf5", "#42e0f5", "#9af1fc", "#c5f6fc")
+
+# now let's collapse all those columns...
+hist_df <- melt(hist_df, id=c("com_rep","vt","tag_dist"))
+
+# Group bins into larger categories and give them descriptive names
+hist_df$variable <- as.character(hist_df$variable)
+
+hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.3'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.4'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.5'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.6'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.7'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.8'] <- "0.8 to 1.0 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.9'] <- "0.8 to 1.0 (Mutualistic)"
+
+# force set the order of the variable column
+hist_df$variable <- factor(hist_df$variable, levels=rev(unique(hist_df$variable)))
+
+# compress bin counts
+hist_df <- hist_df %>%
+    group_by(com_rep, tag_dist, vt, variable) %>% 
+              summarise(value = sum(value))
+
+hist_df$tag_dist <- factor(hist_df$tag_dist, levels=rev(unique(hist_df$tag_dist)))
+
+# order by proportion of ubermutualists
+hist_df$max_mut_count <- rep(hist_df$value[hist_df$variable=="0.8 to 1.0 (Mutualistic)"],1,each=10)
+hist_df <- hist_df %>% group_by(tag_dist,vt,com_rep) %>% mutate(max_mut_prop = max_mut_count/sum(value))
+hist_df<-hist_df %>% group_by(tag_dist, vt) %>% arrange(desc(max_mut_prop)) 
+hist_df<-hist_df %>% group_by(tag_dist, vt) %>%mutate(group_id = rep(1:30,1,each=10))
+
+a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
+  geom_col(position="fill", na.rm=T, width = 1) +
+  scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
+  xlab("Replicate") + ylab("Proportion of symbiont population") +
+  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt) + 
+  facet_nested_theme 
+
+a
+```
+
+##### hosts
+```{r,fig.width=15, fig.height=10}
+
+syms_hist <- hist_df
+end_syms_df <- subset(hosts_df, update==max(update))
+
+end_syms_df <- end_syms_df %>%
+    group_by(tag_dist,vt) %>% 
+              mutate(com_rep = match(seed, unique(seed)))
+
+start_i <- 10
+colnames(end_syms_df)[start_i:(start_i+19)]
+hist_df <- end_syms_df %>% select(c(com_rep, tag_dist, vt), colnames(end_syms_df)[start_i:(start_i+19)])
+
+# Plotting
+# load our color palette 
+tenhelix <- c("#891901", "#B50142", "#D506AD", "#AB08FF", "#5731FD", "#4755FF", "#42bcf5", "#42e0f5", "#9af1fc", "#c5f6fc")
+
+# now let's collapse all those columns...
+hist_df <- melt(hist_df, id=c("com_rep","vt","tag_dist"))
+
+# Group bins into larger categories and give them descriptive names
+hist_df$variable <- as.character(hist_df$variable)
+
+hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.3'] <- "0.2 to 0.4 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.4'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.5'] <- "0.4 to 0.6 (Positive)"
+hist_df$variable[hist_df$variable == 'Hist_0.6'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.7'] <- "0.6 to 0.8 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.8'] <- "0.8 to 1.0 (Mutualistic)"
+hist_df$variable[hist_df$variable == 'Hist_0.9'] <- "0.8 to 1.0 (Mutualistic)"
+
+# force set the order of the variable column
+hist_df$variable <- factor(hist_df$variable, levels=rev(unique(hist_df$variable)))
+
+# compress bin counts
+hist_df <- hist_df %>%
+    group_by(com_rep, tag_dist, vt, variable) %>% 
+              summarise(value = sum(value))
+
+hist_df$tag_dist <- factor(hist_df$tag_dist, levels=rev(unique(hist_df$tag_dist)))
+
+hist_df <- hist_df %>%left_join(select(syms_hist, c(tag_dist, vt, group_id, variable, com_rep)), 
+                                            by= join_by(vt,variable,tag_dist,com_rep))
+
+b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
+  geom_col(position="fill", na.rm=T, width = 1) +
+  scale_fill_manual(name="Behaviour",values=tenhelix)+
+  xlab("Replicate") + ylab("Proportion of host population") +
+  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt) + 
+  facet_nested_theme #+ theme(legend.position = 'bottom') 
+b
+```
+```{r,fig.width=15, fig.height=6}
+legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.justification="center" ,legend.box.just = "bottom"))
+plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
+grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.1))
+```
