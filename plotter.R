@@ -339,8 +339,8 @@ a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) +
   geom_col(position="fill", na.rm=T, width = 1) +
   scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
   xlab("Replicate") + ylab("Proportion of symbiont population") +
-  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt) + 
-  facet_nested_theme 
+  facet_nested("a" + tag_dist ~ "Vertical transmission rate" + vt) + 
+  facet_nested_theme + rotate_y_facet_text(angle = 0) 
 
 syms_hist <- hist_df
 end_syms_df <- subset(hosts_df, update==max(update))
@@ -401,14 +401,12 @@ b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) +
   geom_col(position="fill", na.rm=T, width = 1) +
   scale_fill_manual(name="Behaviour",values=tenhelix)+
   xlab("Replicate") + ylab("Proportion of host population") +
-  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt) + 
-  facet_nested_theme #+ theme(legend.position = 'bottom') 
+  facet_nested("a" + tag_dist ~ "Vertical transmission rate" + vt) + 
+  facet_nested_theme + rotate_y_facet_text(angle = 0) 
 
 legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.justification="center" ,legend.box.just = "bottom"))
 plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
-grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.1))
-
-
+grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.2))
 
 
 
@@ -430,9 +428,6 @@ syms_df$tag_dist <- as.character(syms_df$tag_dist)
 hosts_df$tag_mut <- as.character(hosts_df$tag_mut)
 syms_df$tag_mut <- as.character(syms_df$tag_mut)
 
-hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '_none', "no tag",hosts_df$tag_dist)
-syms_df$tag_dist <- ifelse(syms_df$tag_dist == '_none', "no tag",syms_df$tag_dist)
-
 hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '-1', "no tag",hosts_df$tag_dist)
 syms_df$tag_dist <- ifelse(syms_df$tag_dist == '-1', "no tag",syms_df$tag_dist)
 
@@ -445,7 +440,7 @@ for (x in identifying_cols){
   hosts_df[[x]]<- as.factor(hosts_df[[x]])
 }
 
-str(hosts_df)
+str(hosts_df$tag_dist)
 
 hosts_df$tag_dist <- factor(hosts_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
 syms_df$tag_dist <- factor(syms_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
@@ -519,8 +514,8 @@ a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) +
   geom_col(position="fill", na.rm=T, width = 1) +
   scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
   xlab("Replicate") + ylab("Proportion of symbiont population") +
-  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
-  facet_nested_theme 
+  facet_nested("a" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
+  facet_nested_theme+ rotate_y_facet_text(angle = 0) 
 
 syms_hist <- hist_df
 end_syms_df <- subset(hosts_df, update==max(update))
@@ -581,9 +576,9 @@ b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) +
   geom_col(position="fill", na.rm=T, width = 1) +
   scale_fill_manual(name="Behaviour",values=tenhelix)+
   xlab("Replicate") + ylab("Proportion of host population") +
-  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
-  facet_nested_theme #+ theme(legend.position = 'bottom') 
+  facet_nested("a" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
+  facet_nested_theme + rotate_y_facet_text(angle = 0) 
 
 legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.justification="center" ,legend.box.just = "bottom"))
 plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
-grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.1))
+grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.2))
