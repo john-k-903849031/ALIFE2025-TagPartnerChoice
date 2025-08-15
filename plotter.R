@@ -8,6 +8,8 @@ library(reshape2)
 library(readr)
 library(gridExtra)
 library(cowplot)
+library(desiderata)
+
 ########### tag mut control ###########
 filepath<- "../../symbulation_experiments/2025.05.02_control_fixed_mutualists/"
 a <- read_csv(paste0(filepath,"org_dump_file.dat"),col_names=T)
@@ -52,7 +54,7 @@ facet_nested_theme <- theme(
   legend.key = element_rect(color = "transparent"),
   panel.spacing.x = unit(0,"line"),
   panel.spacing.y = unit(0,"line"),
-  axis.text.x = element_text(angle = 60, vjust = 0.2, hjust=0.2))
+  axis.text.x = element_text(angle = 60, vjust = 0.2, hjust=0.2)) 
 
 small <- small %>% group_by(sym_bin,tag_dist,tag_mut) %>% mutate(td_mean =  mean(tag_distance))
 
@@ -68,9 +70,27 @@ plot <- ggplot(small, aes(x=tag_distance)) +
                     breaks=c("Fixed parasites", "Fixed mutualists")) + 
   ylab("Pooled count across replicates / 10,000")+
   facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  rotate_y_facet_text(angle = 0) +
   facet_nested_theme + theme(legend.position = 'bottom') #+ theme(axis.text.y = element_text(angle = 60))
 plot
-#parastab_control_small <- small
+
+unique(subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25)$tag_dist)
+plot <- ggplot(subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25), aes(x=tag_distance)) + 
+  geom_histogram(data=subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill="Fixed parasites",y=..count../10000),alpha=0.7,  bins=16)+
+  geom_histogram(data=subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill="Fixed mutualists",y=..count../10000), alpha=0.7, bins=16) +
+  geom_vline(data=subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
+  geom_vline(data=subset(small, tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
+  xlab("Tag proportional mismatch") + 
+  scale_fill_manual(name="Symbiont behavior",
+                    values=c("Fixed parasites"="#3E9BFEFF", "Fixed mutualists"="#7A0403FF"),
+                    breaks=c("Fixed parasites", "Fixed mutualists")) + 
+  ylab("Pooled count across replicates / 10,000")+
+  facet_nested("ab" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  rotate_y_facet_text(angle = 0) +
+  facet_nested_theme + theme(legend.position = 'bottom') +
+  scale_y_continuous(breaks = c(0,5))
+plot
+ parastab_control_small <- small
 
 ########### vt control ###########
 filepath<- "../../symbulation_experiments/2025.05.04_control_vtsweep_fixed_mutualists/"
@@ -120,18 +140,21 @@ facet_nested_theme <- theme(
 
 small <- small %>% group_by(sym_bin,tag_dist,vt) %>% mutate(td_mean =  mean(as.numeric(tag_distance)))
 
-plot <- ggplot(small, aes(x=as.numeric(tag_distance))) + 
-  geom_histogram(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill="Fixed parasites",y=..count../10000),alpha=0.7,  bins=16)+
-  geom_histogram(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill="Fixed mutualists",y=..count../10000), alpha=0.7, bins=16) +
-  geom_vline(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
-  geom_vline(data=subset(small, sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
+plot <- ggplot(subset(small,  tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25), aes(x=as.numeric(tag_distance))) + 
+  geom_histogram(data=subset(small,  tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="-1 to -0.6 (Parasitic)"), aes(fill="Fixed parasites",y=..count../10000),alpha=0.7,  bins=16)+
+  geom_histogram(data=subset(small,  tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill="Fixed mutualists",y=..count../10000), alpha=0.7, bins=16) +
+  geom_vline(data=subset(small,  tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(xintercept = td_mean), color="#7A0403FF",linetype="dotted") +
+  geom_vline(data=subset(small,  tag_dist != 0.125 & tag_dist != 0.1875 & tag_dist != 0.25 & sym_bin=="-1 to -0.6 (Parasitic)"), aes(xintercept = td_mean), color="#3E9BFEFF",linetype="dotted") +
   xlab("Tag proportional mismatch") + 
   scale_fill_manual(name="Symbiont behavior",
                     values=c("Fixed parasites"="#3E9BFEFF", "Fixed mutualists"="#7A0403FF"),
                     breaks=c("Fixed parasites", "Fixed mutualists")) + 
   ylab("Pooled count across replicates / 10,000")+
-  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt, drop=TRUE) + 
-  facet_nested_theme + theme(legend.position = 'bottom') #+ theme(axis.text.y = element_text(angle = 60))
+  facet_nested("ab" + tag_dist ~ "Vertical transmission rate" + vt, drop=TRUE) + 
+  rotate_y_facet_text(angle = 0) + 
+  facet_nested_theme + theme(legend.position = 'bottom') + 
+  scale_y_continuous(breaks = c(0,4,8)) + 
+  scale_x_continuous(breaks = c(0,0.4,0.8))
 
 plot
 #vtsweep_control_small <- small
@@ -235,9 +258,9 @@ plot
 
 ########### vt strat barplot ########### 
 filepath <- "../../symbulation_experiments/2025.04.17_vtsweep_tagmat_fixed_phylointeractions/"
-syms_df <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+syms_df <- read_csv(paste0(filepath,"sym_vals.dat"))
 syms_df <- subset(syms_df, update==max(update))
-hosts_df <- read.csv(paste0(filepath,"host_vals.dat"),h=T)
+hosts_df <- read_csv(paste0(filepath,"host_vals.dat"))
 hosts_df <- subset(hosts_df, update==max(update))
 
 hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '_none', "no tag",hosts_df$tag_dist)
@@ -275,16 +298,16 @@ hist_df <- melt(hist_df, id=c("com_rep","vt","tag_dist"))
 # Group bins into larger categories and give them descriptive names
 hist_df$variable <- as.character(hist_df$variable)
 
-hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
-hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-0.1'] <- "-0.2 to 0 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
@@ -340,16 +363,16 @@ hist_df <- melt(hist_df, id=c("com_rep","vt","tag_dist"))
 # Group bins into larger categories and give them descriptive names
 hist_df$variable <- as.character(hist_df$variable)
 
-hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
-hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-0.1'] <- "-0.2 to 0 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
@@ -391,14 +414,30 @@ grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.1))
 
 
 ########### tag mut strat barplot ########### 
+options(scipen = 999)
 filepath <- "../../symbulation_experiments/2025.04.17_parastab_tagmat_fixed_phylointeractions/"
-syms_df <- read.csv(paste0(filepath,"sym_vals.dat"),h=T)
+syms_df <- read_csv(paste0(filepath,"sym_vals.dat"))
 syms_df <- subset(syms_df, update==max(update))
-hosts_df <- read.csv(paste0(filepath,"host_vals.dat"),h=T)
+hosts_df <- read_csv(paste0(filepath,"host_vals.dat"))
 hosts_df <- subset(hosts_df, update==max(update))
+
+a <- syms_df 
+b <- hosts_df
+
+print((hosts_df$tag_mut))
+hosts_df$tag_dist <- as.character(hosts_df$tag_dist)
+syms_df$tag_dist <- as.character(syms_df$tag_dist)
+hosts_df$tag_mut <- as.character(hosts_df$tag_mut)
+syms_df$tag_mut <- as.character(syms_df$tag_mut)
 
 hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '_none', "no tag",hosts_df$tag_dist)
 syms_df$tag_dist <- ifelse(syms_df$tag_dist == '_none', "no tag",syms_df$tag_dist)
+
+hosts_df$tag_dist <- ifelse(hosts_df$tag_dist == '-1', "no tag",hosts_df$tag_dist)
+syms_df$tag_dist <- ifelse(syms_df$tag_dist == '-1', "no tag",syms_df$tag_dist)
+
+hosts_df$tag_mut <- ifelse(hosts_df$tag_mut == '-1', "no tag",hosts_df$tag_mut)
+syms_df$tag_mut <- ifelse(syms_df$tag_mut == '-1', "no tag",syms_df$tag_mut)
 
 identifying_cols <- 1:3
 for (x in identifying_cols){
@@ -407,8 +446,15 @@ for (x in identifying_cols){
 }
 
 str(hosts_df)
+
 hosts_df$tag_dist <- factor(hosts_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
 syms_df$tag_dist <- factor(syms_df$tag_dist, levels=c("0.125",  "0.1875", "0.25",   "0.3125", "0.375",  "0.4375", "0.5",    "0.5625", "0.625" ,"no tag"))
+
+
+hosts_df$tag_mut <- factor(hosts_df$tag_mut, levels=c("no tag", "0", "0.0001", "0.0005", "0.001", "0.005", "0.01", "0.05", "0.1"))
+syms_df$tag_mut <- factor(syms_df$tag_mut, levels=c("no tag", "0", "0.0001", "0.0005", "0.001", "0.005", "0.01", "0.05", "0.1"))
+
+
 
 rm(identifying_cols)
 
@@ -432,16 +478,16 @@ hist_df <- melt(hist_df, id=c("com_rep","tag_mut","tag_dist"))
 # Group bins into larger categories and give them descriptive names
 hist_df$variable <- as.character(hist_df$variable)
 
-hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
-hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-0.1'] <- "-0.2 to 0 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
@@ -497,16 +543,16 @@ hist_df <- melt(hist_df, id=c("com_rep","tag_mut","tag_dist"))
 # Group bins into larger categories and give them descriptive names
 hist_df$variable <- as.character(hist_df$variable)
 
-hist_df$variable[hist_df$variable == 'Hist_.1'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.9'] <- "-1 to -0.8 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.8'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.7'] <- "-0.8 to -0.6 (Parasitic)"
-hist_df$variable[hist_df$variable == 'Hist_.0.6'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.5'] <- "-0.6 to -0.4 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.4'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.3'] <- "-0.4 to -0.2 (Detrimental)"
-hist_df$variable[hist_df$variable == 'Hist_.0.2'] <- "-0.2 to 0 (Nearly Neutral)"
-hist_df$variable[hist_df$variable == 'Hist_.0.1'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-1'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.9'] <- "-1 to -0.8 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.8'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.7'] <- "-0.8 to -0.6 (Parasitic)"
+hist_df$variable[hist_df$variable == 'Hist_-0.6'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.5'] <- "-0.6 to -0.4 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.4'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.3'] <- "-0.4 to -0.2 (Detrimental)"
+hist_df$variable[hist_df$variable == 'Hist_-0.2'] <- "-0.2 to 0 (Nearly Neutral)"
+hist_df$variable[hist_df$variable == 'Hist_-0.1'] <- "-0.2 to 0 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.0'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.1'] <- "0 to 0.2 (Nearly Neutral)"
 hist_df$variable[hist_df$variable == 'Hist_0.2'] <- "0.2 to 0.4 (Positive)"
