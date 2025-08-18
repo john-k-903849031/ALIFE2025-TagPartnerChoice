@@ -190,7 +190,7 @@ plot <- ggplot(small, aes(x=tag_distance)) +
    geom_histogram(data=subset(small, sym_bin=="0.2 to 0.6 (Positive)"), aes(fill=sym_bin,y=..count../10000), alpha=0.7, bins=16) +
   geom_histogram(data=subset(small, sym_bin=="0.6 to 1.0 (Mutualistic)"), aes(fill=sym_bin,y=..count../10000), alpha=0.7, bins=16) +
   xlab("Tag proportional mismatch") + 
-  scale_fill_manual(name="Symbiont behavior",
+  scale_fill_manual(name="Symbiont\nbehavior",
                     values=c("-1 to -0.6 (Parasitic)"="#3E9BFEFF", '-0.6 to -0.2 (Detrimental)'="#46F884FF", 
                              '-0.2 to 0.2 (Nearly neutral)'="#E1DD37FF",
                              "0.2 to 0.6 (Positive)"="#F05B12FF", "0.6 to 1.0 (Mutualistic)"="#7A0403FF"),
@@ -198,11 +198,18 @@ plot <- ggplot(small, aes(x=tag_distance)) +
                              '-0.2 to 0.2 (Nearly neutral)',
                              "0.2 to 0.6 (Positive)", "0.6 to 1.0 (Mutualistic)")) + 
   ylab("Pooled count across replicates / 10,000")+
-  facet_nested("Tag permissiveness" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
-  facet_nested_theme+ theme(legend.position = 'bottom')+guides(fill=guide_legend(nrow=2,byrow=TRUE))
+  facet_nested("a" + tag_dist ~ "Tag mutation rate" + tag_mut, drop=TRUE) + 
+  rotate_y_facet_text(angle = 0) + 
+  scale_y_continuous(breaks = c(0,5)) + 
+  facet_nested_theme+ theme(legend.position = 'bottom')+guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+  theme(legend.key.size = unit(0.4, 'cm'), #change legend key size
+        #legend.key.height = unit(0.1, 'cm'), #change legend key height
+        #legend.key.width = unit(0.1, 'cm'), #change legend key width
+        legend.title = element_text(size=8), #change legend title font size
+        legend.text = element_text(size=8)) #change legend text font size
 plot
 
-#tagmut_evo_small <- small
+tagmut_evo_small <- small
 
 
 
@@ -250,8 +257,16 @@ plot <- ggplot(small, aes(x=tag_distance)) +
                              '-0.2 to 0.2 (Nearly neutral)',
                              "0.2 to 0.6 (Positive)", "0.6 to 1.0 (Mutualistic)")) + 
   ylab("Pooled count across replicates / 10,000")+
-  facet_nested("Tag permissiveness" + tag_dist ~ "Vertical transmission rate" + vt, drop=TRUE) + 
-  facet_nested_theme+ theme(legend.position = 'bottom')+guides(fill=guide_legend(nrow=2,byrow=TRUE))
+  facet_nested("a" + tag_dist ~ "Vertical transmission rate" + vt, drop=TRUE) + 
+  facet_nested_theme+ theme(legend.position = 'bottom')+guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+  rotate_y_facet_text(angle = 0) + 
+  scale_y_continuous(breaks = c(0,5)) + 
+  facet_nested_theme+ theme(legend.position = 'bottom')+guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+  theme(legend.key.size = unit(0.4, 'cm'), #change legend key size
+        #legend.key.height = unit(0.1, 'cm'), #change legend key height
+        #legend.key.width = unit(0.1, 'cm'), #change legend key width
+        legend.title = element_text(size=8), #change legend title font size
+        legend.text = element_text(size=8)) #change legend text font size
 plot
 
 
@@ -337,7 +352,7 @@ hist_df<-hist_df %>% group_by(tag_dist, vt) %>%mutate(group_id = rep(1:30,1,each
 
 a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
   geom_col(position="fill", na.rm=T, width = 1) +
-  scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
+  scale_fill_manual(name="Behavior",values=tenhelix,guide="none")+
   xlab("Replicate") + ylab("Proportion of symbiont population") +
   facet_nested("a" + tag_dist ~ "Vertical transmission rate" + vt) + 
   facet_nested_theme + rotate_y_facet_text(angle = 0) 
@@ -399,7 +414,7 @@ hist_df <- hist_df %>%left_join(select(syms_hist, c(tag_dist, vt, group_id, vari
 
 b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
   geom_col(position="fill", na.rm=T, width = 1) +
-  scale_fill_manual(name="Behaviour",values=tenhelix)+
+  scale_fill_manual(name="Behavior",values=tenhelix)+
   xlab("Replicate") + ylab("Proportion of host population") +
   facet_nested("a" + tag_dist ~ "Vertical transmission rate" + vt) + 
   facet_nested_theme + rotate_y_facet_text(angle = 0) 
@@ -408,7 +423,7 @@ legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.ju
 plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
 grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.2))
 
-
+plots
 
 
 ########### tag mut strat barplot ########### 
@@ -512,7 +527,7 @@ hist_df<-hist_df %>% group_by(tag_dist, tag_mut) %>%mutate(group_id = rep(1:30,1
 
 a <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
   geom_col(position="fill", na.rm=T, width = 1) +
-  scale_fill_manual(name="Behaviour",values=tenhelix,guide="none")+
+  scale_fill_manual(name="Behavior",values=tenhelix,guide="none")+
   xlab("Replicate") + ylab("Proportion of symbiont population") +
   facet_nested("a" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
   facet_nested_theme+ rotate_y_facet_text(angle = 0) 
@@ -574,7 +589,7 @@ hist_df <- hist_df %>%left_join(select(syms_hist, c(tag_dist, tag_mut, group_id,
 
 b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) + 
   geom_col(position="fill", na.rm=T, width = 1) +
-  scale_fill_manual(name="Behaviour",values=tenhelix)+
+  scale_fill_manual(name="Behavior",values=tenhelix)+
   xlab("Replicate") + ylab("Proportion of host population") +
   facet_nested("a" + tag_dist ~ "Tag mutation rate" + tag_mut) + 
   facet_nested_theme + rotate_y_facet_text(angle = 0) 
@@ -582,3 +597,4 @@ b <- ggplot(hist_df, aes(fill=variable, x=group_id,y=value), na.rm=T) +
 legend <- cowplot::get_legend(b+ theme(legend.direction = "horizontal",legend.justification="center" ,legend.box.just = "bottom"))
 plots <- grid.arrange(a+theme(axis.text.y=element_blank(), axis.text.x=element_blank(), axis.ticks = element_blank()),b+theme(legend.position = "none",axis.text.y=element_blank(), axis.text.x=element_blank(),axis.ticks = element_blank()), ncol=2,widths=c(1,1))
 grid.arrange(plots,legend, ncol=1, nrow=2,heights=c(1,0.2))
+
