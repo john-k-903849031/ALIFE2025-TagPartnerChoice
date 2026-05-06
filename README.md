@@ -20,4 +20,4 @@ Effect size is inaccurately reported in two sentences:
 
   	b.	Permissiveness 0.375, mutation 0.05 (δ ≈ 0.57)
 
-A full spreadsheet of calculated statistics can be found in the stats/ directory. 
+A full spreadsheet of calculated statistics can be found in the stats/tag_dists/ directory. 
